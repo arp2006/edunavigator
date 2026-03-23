@@ -20,43 +20,6 @@ edunavigator/
         └── chat.py          # POST /chat
 ```
 
-## Setup
-
-### 1. Install dependencies
-```bash
-pip install -r requirements.txt
-```
-
-### 2. Set up PostgreSQL
-```bash
-# Create the database
-psql -U postgres -c "CREATE DATABASE edunavigator;"
-```
-
-### 3. Configure environment
-```bash
-cp .env.example .env
-# Edit .env with your DB credentials
-```
-
-### 4. Run the server
-```bash
-uvicorn main:app --reload
-```
-
-### 5. Explore the API
-Open http://localhost:8000/docs for the interactive Swagger UI.
-
-## API Endpoints
-
-| Method | Endpoint             | Description                          |
-|--------|----------------------|--------------------------------------|
-| POST   | /profile/            | Create a student profile             |
-| GET    | /profile/{id}        | Get a student profile                |
-| PATCH  | /profile/{id}        | Update a student profile             |
-| GET    | /recommend/{id}      | Get degree recommendations           |
-| POST   | /chat/               | Chat-based refinement of results     |
-
 ## Recommendation Engine
 
 The engine uses a **hybrid approach**:
