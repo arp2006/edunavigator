@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.db import engine, Base   # ✅ FIXED IMPORT
-from app.routers import profile, recommend, chat
+from app.routers import auth, profile, recommend, chat, questionnaire
 
 # Create all tables on startup
 Base.metadata.create_all(bind=engine)
@@ -25,6 +25,8 @@ app.add_middleware(
 app.include_router(profile.router, prefix="/profile", tags=["Profile"])
 app.include_router(recommend.router, prefix="/recommend", tags=["Recommendation"])
 app.include_router(chat.router, prefix="/chat", tags=["Chat"])
+app.include_router(questionnaire.router, prefix="/questionnaire", tags=["Questionnaire"])
+app.include_router(auth.router, prefix="/auth", tags=["Auth"])
 
 @app.get("/")
 def root():
