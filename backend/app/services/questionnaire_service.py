@@ -2,8 +2,8 @@ from app.models import UserProfile, Question, UserAnswer
 from sqlalchemy.orm import Session
 from app.services.recommendation_service import generate_recommendations
 
-def process_and_store_answers(data, db: Session):
-    user = db.query(UserProfile).filter(UserProfile.id == data.user_id).first()
+def process_and_store_answers(user_id, data, db: Session):
+    user = db.query(UserProfile).filter(UserProfile.id == user_id).first()
 
     if not user:
         return None
@@ -24,9 +24,9 @@ def process_and_store_answers(data, db: Session):
 
         # store answer
         user_answer = UserAnswer(
-            user_id=data.user_id,
-            question_id=item.question_id,
-            answer=item.answer
+        user_id=user_id,
+        question_id=item.question_id,
+        answer=item.answer
         )
         db.add(user_answer)
 

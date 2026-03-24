@@ -6,5 +6,4 @@ class AnswerItem(BaseModel):
     answer: str   # "yes", "no", "maybe"
 
 class QuestionnaireSubmission(BaseModel):
-    user_id: int
     answers: List[AnswerItem]
