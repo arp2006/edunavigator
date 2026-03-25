@@ -1,50 +1,60 @@
-from app.models import UserProfile, Question, UserAnswer
 from sqlalchemy.orm import Session
-from app.services.recommendation_service import generate_recommendations
+from app.models import UserProfile, SubjectResponse, Score
 
-def process_and_store_answers(user_id, data, db: Session):
-    user = db.query(UserProfile).filter(UserProfile.id == user_id).first()
 
-    if not user:
+def combine_score(interest, performance):
+    return (interest * 0.6) + (performance * 0.4)
+
+
+def process_questionnaire(user_id, data, db: Session):
+    # 1. get profile
+    profile = db.query(UserProfile).filter(UserProfile.user_id == user_id).first()
+
+    if not profile:
         return None
 
-    scores = {
-        "math_score": 0,
-        "tech_score": 0,
-        "arts_score": 0,
-        "commerce_score": 0,
-        "science_score": 0
-    }
+    # 2. clear old responses (optional but recommended)
+    db.query(SubjectResponse).filter(SubjectResponse.profile_id == profile.id).delete()
 
-    for item in data.answers:
-        question = db.query(Question).filter(Question.id == item.question_id).first()
-
-        if not question:
-            continue
-
-        # store answer
-        user_answer = UserAnswer(
-        user_id=user_id,
-        question_id=item.question_id,
-        answer=item.answer
+    # 3. store new responses
+    for item in data.responses:
+        response = SubjectResponse(
+            profile_id=profile.id,
+            subject=item.subject,
+            interest=item.interest,
+            performance=item.performance
         )
-        db.add(user_answer)
+        db.add(response)
 
-        # scoring
-        if item.answer == "yes":
-            scores[f"{question.category}_score"] += question.weight
+    # 4. get or create score
+    score = db.query(Score).filter(Score.profile_id == profile.id).first()
 
-    # update profile
-    user.math_score = scores["math_score"]
-    user.tech_score = scores["tech_score"]
-    user.arts_score = scores["arts_score"]
-    user.commerce_score = scores["commerce_score"]
-    user.science_score = scores["science_score"]
+    if not score:
+        score = Score(profile_id=profile.id)
+        db.add(score)
+
+    # 5. reset scores
+    score.math_score = 0
+    score.science_score = 0
+    score.commerce_score = 0
+    score.tech_score = 0
+    score.arts_score = 0
+
+    # 6. calculate scores
+    responses = db.query(SubjectResponse).filter(SubjectResponse.profile_id == profile.id).all()
+
+    for res in responses:
+        combined = combine_score(res.interest, res.performance)
+
+        if res.subject == "math":
+            score.math_score += combined
+
+        elif res.subject in ["physics", "chemistry", "biology"]:
+            score.science_score += combined
+
+        elif res.subject in ["accounts", "economics"]:
+            score.commerce_score += combined
 
     db.commit()
-    db.refresh(user)
 
-    # 🔥 NEW — generate recommendations
-    recommendations = generate_recommendations(user, db)
-
-    return user, recommendations
+    return True
