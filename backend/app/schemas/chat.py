@@ -3,8 +3,8 @@ from typing import List
 from app.schemas.recommendation import DegreeRecommendation
 
 class ChatMessage(BaseModel):
-    user_id: int
-    message: str          # User's natural language input
+    profile_id: int
+    message: str
 
 class ChatResponse(BaseModel):
     reply: str

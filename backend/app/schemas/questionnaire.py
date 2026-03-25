@@ -1,9 +1,14 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List
 
-class AnswerItem(BaseModel):
-    question_id: int
-    answer: str   # "yes", "no", "maybe"
+class SubjectInput(BaseModel):
+    subject: str
+    interest: int = Field(ge=1, le=5)
+    performance: int = Field(ge=1, le=5)
 
-class QuestionnaireSubmission(BaseModel):
-    answers: List[AnswerItem]
+class QuestionnaireRequest(BaseModel):
+    profile_id: int
+    responses: List[SubjectInput]
+
+class QuestionnaireResponse(BaseModel):
+    message: str

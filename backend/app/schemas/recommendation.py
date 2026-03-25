@@ -3,12 +3,11 @@ from typing import List
 
 class DegreeRecommendation(BaseModel):
     degree_name: str
+    type: str
     field: str
-    description: str
-    score: float          # 0.0 - 1.0 match score
-    match_reason: str     # Human-readable explanation
-
+    discipline: str
+    score: float
 
 class RecommendationResponse(BaseModel):
-    user_id: int
+    profile_id: int
     recommendations: List[DegreeRecommendation]
