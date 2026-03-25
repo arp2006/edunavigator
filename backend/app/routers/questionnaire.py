@@ -1,29 +1,26 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.core.db import get_db
-from app.schemas.questionnaire import QuestionnaireSubmission
-from app.services.questionnaire_service import process_and_store_answers
+from app.schemas.questionnaire import QuestionnaireRequest
+from app.services.questionnaire_service import process_questionnaire
 from app.core.deps import get_current_user
 
 router = APIRouter()
 
+
 @router.post("/")
 def submit_questionnaire(
-    data: QuestionnaireSubmission,
+    data: QuestionnaireRequest,
     db: Session = Depends(get_db),
-    user=Depends(get_current_user)   # 👈 from JWT
+    user=Depends(get_current_user)
 ):
     user_id = user.get("user_id")
 
-    result = process_and_store_answers(user_id, data, db)
+    result = process_questionnaire(user_id, data, db)
 
     if not result:
-        return {"error": "User not found"}
-
-    user_obj, recommendations = result
+        raise HTTPException(status_code=404, detail="Profile not found")
 
     return {
-        "message": "Questionnaire processed",
-        "user_id": user_obj.id,
-        "recommendations": recommendations
+        "message": "Questionnaire processed successfully"
     }

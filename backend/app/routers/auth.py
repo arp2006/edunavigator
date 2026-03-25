@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.core.db import get_db
 from app.schemas.auth import SignupRequest, LoginRequest
@@ -8,20 +8,25 @@ router = APIRouter()
 
 @router.post("/signup")
 def signup_user(data: SignupRequest, db: Session = Depends(get_db)):
-    user = signup(data, db)
+    user_profile = signup(data, db)
 
-    if not user:
-        return {"error": "User already exists"}
+    if not user_profile:
+        raise HTTPException(status_code=400, detail="User already exists")
 
-    return {"message": "User created", "user_id": user.id}
+    user, profile = user_profile
 
+    return {
+        "message": "User created",
+        "user_id": user.id,
+        "profile_id": profile.id
+    }
 
 @router.post("/login")
 def login_user(data: LoginRequest, db: Session = Depends(get_db)):
     token = login(data, db)
 
     if not token:
-        return {"error": "Invalid credentials"}
+        raise HTTPException(status_code=401, detail="Invalid credentials")
 
     return {
         "access_token": token,
