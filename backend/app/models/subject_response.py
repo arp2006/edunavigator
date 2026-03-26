@@ -14,7 +14,7 @@ class SubjectResponse(Base):
     interest = Column(Integer)     # 1–5
     performance = Column(Integer)  # 1–5 (normalized)
 
-    profile = relationship("Profile", back_populates="subject_responses")
+    profile = relationship("UserProfile", back_populates="subject_responses")
 
     __table_args__ = (
         UniqueConstraint('profile_id', 'subject', name='unique_profile_subject'),

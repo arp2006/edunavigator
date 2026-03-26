@@ -16,11 +16,11 @@ def generate_recommendations(profile_id, db: Session, top_n=5):
 
     for d in degrees:
         total = (
-            score.math_score * d.math_weight +
-            score.tech_score * d.tech_weight +
-            score.arts_score * d.arts_weight +
-            score.commerce_score * d.commerce_weight +
-            score.science_score * d.science_weight
+            (score.math_score or 0) * (d.math_weight or 0) +
+            (score.tech_score or 0) * (d.tech_weight or 0) +
+            (score.arts_score or 0) * (d.arts_weight or 0) +
+            (score.commerce_score or 0) * (d.commerce_weight or 0) +
+            (score.science_score or 0) * (d.science_weight or 0)
         )
 
         results.append({

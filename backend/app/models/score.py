@@ -15,4 +15,4 @@ class Score(Base):
     commerce_score = Column(Integer, default=0)
     science_score = Column(Integer, default=0)
     
-    score = relationship("Score", back_populates="profile", uselist=False)
+    profile = relationship("UserProfile", back_populates="score")
