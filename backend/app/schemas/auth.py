@@ -5,7 +5,7 @@ class SignupRequest(BaseModel):
     name: Optional[str] = None
     email: EmailStr
     password: str = Field(min_length=6)
-    stream: Literal["science", "commerce", "arts"]
+    stream: Literal["Science", "Commerce", "Arts"]
 
 class LoginRequest(BaseModel):
     email: EmailStr

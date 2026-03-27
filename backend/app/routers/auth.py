@@ -13,11 +13,12 @@ def signup_user(data: SignupRequest, db: Session = Depends(get_db)):
     if not user_profile:
         raise HTTPException(status_code=400, detail="Email already exists")
 
-    token, user = user_profile
+    token, user, profile = user_profile
 
     return {
         "access_token": token,
-        "access_user": user.id
+        "access_user": user.id,
+        "stream": profile.stream
     }
 
 @router.post("/login")
@@ -27,10 +28,10 @@ def login_user(data: LoginRequest, db: Session = Depends(get_db)):
     if not user_token:
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
-    token, user = user_token
+    token, user, profile = user_token
     
     return {
         "access_token": token,
-        "token_type": "bearer",
-        "user": user
+        "access_user": user.id,
+        "stream": profile.stream
     }

@@ -1,37 +1,42 @@
 from app.models.user import User
+from app.models.profile import UserProfile
 from app.core.security import hash_password
 from app.core.security import verify_password
 from app.core.jwt_handler import create_access_token
-from app.models.profile import UserProfile
 
 def signup(data, db):
-    existing = db.query(User).filter(User.email == data.email).first()
-    if existing:
-        return None
+    try:
+        existing = db.query(User).filter(User.email == data.email).first()
+        if existing:
+            return None
 
-    user = User(
-        name= data.name,
-        email=data.email,
-        hashed_password=hash_password(data.password)
-    )
+        user = User(
+            name=data.name,
+            email=data.email,
+            hashed_password=hash_password(data.password)
+        )
 
-    db.add(user)
-    db.flush()  # get user.id without commit
+        db.add(user)
+        db.flush()
 
-    profile = UserProfile(
-        user_id=user.id,
-        stream=data.stream
-    )
+        profile = UserProfile(
+            user_id=user.id,
+            stream=data.stream
+        )
 
-    db.add(profile)
-    db.commit()
+        db.add(profile)
+        db.commit()
 
-    db.refresh(user)
-    db.refresh(profile)
+        db.refresh(user)
+        db.refresh(profile)
 
-    token = create_access_token({"user_id": user.id})
+        token = create_access_token({"user_id": user.id})
 
-    return token, user
+        return token, user, profile
+
+    except Exception as e:
+        db.rollback()
+        raise e
 
 def login(data, db):
     user = db.query(User).filter(User.email == data.email).first()
@@ -42,6 +47,8 @@ def login(data, db):
     if not verify_password(data.password, user.hashed_password):
         return None
 
+    profile = db.query(UserProfile).filter(UserProfile.user_id == user.id).first()
+
     token = create_access_token({"user_id": user.id})
 
-    return token, user
+    return token, user, profile
