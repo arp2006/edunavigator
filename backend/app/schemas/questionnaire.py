@@ -1,14 +1,15 @@
 from pydantic import BaseModel, Field
-from typing import List
+from typing import List, Optional, Dict
 
 class SubjectInput(BaseModel):
     subject: str
-    interest: int = Field(ge=1, le=5)
-    performance: int = Field(ge=1, le=5)
+    interest: Optional[int]
+    performance: Optional[int]
 
 class QuestionnaireRequest(BaseModel):
     profile_id: int
     responses: List[SubjectInput]
+    extra: Optional[Dict[str, Dict[int, int]]] = None
 
 class QuestionnaireResponse(BaseModel):
     message: str

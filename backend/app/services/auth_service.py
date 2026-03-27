@@ -10,6 +10,7 @@ def signup(data, db):
         return None
 
     user = User(
+        name= data.name,
         email=data.email,
         hashed_password=hash_password(data.password)
     )

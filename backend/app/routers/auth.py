@@ -11,7 +11,7 @@ def signup_user(data: SignupRequest, db: Session = Depends(get_db)):
     user_profile = signup(data, db)
 
     if not user_profile:
-        raise HTTPException(status_code=400, detail="User already exists")
+        raise HTTPException(status_code=400, detail="Email already exists")
 
     token, user = user_profile
 

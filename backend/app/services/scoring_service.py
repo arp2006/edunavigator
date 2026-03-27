@@ -17,5 +17,5 @@ def calculate_scores(profile, responses):
         elif res.subject in ["physics", "chemistry", "biology"]:
             profile.science_score += combined
 
-        elif res.subject in ["accounts", "economics"]:
+        elif res.subject in ["accounts", "economics", "business"]:
             profile.commerce_score += combined
