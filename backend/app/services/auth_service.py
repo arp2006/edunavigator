@@ -28,7 +28,9 @@ def signup(data, db):
     db.refresh(user)
     db.refresh(profile)
 
-    return user, profile
+    token = create_access_token({"user_id": user.id})
+
+    return token, user
 
 def login(data, db):
     user = db.query(User).filter(User.email == data.email).first()
@@ -41,4 +43,4 @@ def login(data, db):
 
     token = create_access_token({"user_id": user.id})
 
-    return token
+    return token, user
