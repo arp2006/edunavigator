@@ -18,7 +18,8 @@ def signup_user(data: SignupRequest, db: Session = Depends(get_db)):
     return {
         "access_token": token,
         "access_user": user.id,
-        "stream": profile.stream
+        "stream": profile.stream,
+        "profile_id": profile.id
     }
 
 @router.post("/login")
@@ -33,5 +34,6 @@ def login_user(data: LoginRequest, db: Session = Depends(get_db)):
     return {
         "access_token": token,
         "access_user": user.id,
-        "stream": profile.stream
+        "stream": profile.stream,
+        "profile_id": profile.id
     }
