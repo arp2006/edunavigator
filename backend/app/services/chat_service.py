@@ -3,6 +3,7 @@ import json
 import httpx
 from sqlalchemy.orm import Session
 from app.models import UserProfile, Score
+from app.services.scoring_service import recompute_scores
 
 # ==============================
 # CONFIG
@@ -154,38 +155,49 @@ def clamp(val):
 # MAIN FUNCTION
 # ==============================
 
+
+def apply_adjustments_to_responses(profile_id: int, adjustments: dict, db: Session):
+    from app.models import SubjectResponse
+
+    responses = db.query(SubjectResponse).filter(
+        SubjectResponse.profile_id == profile_id
+    ).all()
+
+    for r in responses:
+        if r.subject == "math":
+            r.interest += adjustments.get("math_score", 0)
+        elif r.subject == "science":
+            r.interest += adjustments.get("science_score", 0)
+        elif r.subject == "tech":
+            r.interest += adjustments.get("tech_score", 0)
+        elif r.subject == "commerce":
+            r.interest += adjustments.get("commerce_score", 0)
+        elif r.subject == "arts":
+            r.interest += adjustments.get("arts_score", 0)
+
+    db.commit()
+
 def process_chat(profile_id: int, message: str, db: Session) -> dict:
     profile = db.query(UserProfile).filter(UserProfile.id == profile_id).first()
     if not profile:
         return None
 
-    score = profile.score
     history = list(profile.chat_history or [])
-
-    # ------------------------------
-    # SELECT MODE
-    # ------------------------------
     try:
         if LLM_MODE == "mock":
             result = mock_chat(message)
         else:
-            result = call_claude(profile, score, history, message)
+            result = call_claude(profile, profile.score, history, message)
     except Exception:
-        # fallback to mock if LLM fails
         result = mock_chat(message)
 
     reply = result.get("reply", "Tell me more about your interests.")
     adjustments = result.get("adjustments", {})
 
-    # ------------------------------
-    # SAFE SCORE UPDATE
-    # ------------------------------
-    if score:
-        score.math_score += clamp(adjustments.get("math_score", 0))
-        score.science_score += clamp(adjustments.get("science_score", 0))
-        score.tech_score += clamp(adjustments.get("tech_score", 0))
-        score.commerce_score += clamp(adjustments.get("commerce_score", 0))
-        score.arts_score += clamp(adjustments.get("arts_score", 0))
+    apply_adjustments_to_responses(profile.id, adjustments, db)
+
+    # recompute scores from updated responses
+    recompute_scores(profile.id, db)
 
     # ------------------------------
     # SAVE CHAT HISTORY
