@@ -5,13 +5,13 @@ from app.models import Score, Degree, UserProfile
 def is_degree_allowed(profile, degree):
     name = (degree.name or "").lower()
 
-    if "btech" in name or "b.e" in name or "beng" in name:
+    if "b.tech" in name or "b.e" in name or "beng" in name:
         return profile.stream.lower() == "science"
 
     return True
 
 
-def generate_recommendations(profile_id, db: Session, top_n=5):
+def generate_recommendations(profile_id, db: Session, top_n=10):
     # 1. get profile + score
     profile = db.query(UserProfile).filter(UserProfile.id == profile_id).first()
     score = db.query(Score).filter(Score.profile_id == profile_id).first()
@@ -49,18 +49,23 @@ def generate_recommendations(profile_id, db: Session, top_n=5):
             science * (d.science_weight or 0)
         )
 
+        # amplify stronger matches
+        total = total ** 1.1
+
         # ------------------------------
         # CONFIDENCE CALCULATION
         # ------------------------------
-        max_possible = (
-            5 * (d.math_weight or 0) +
-            5 * (d.tech_weight or 0) +
-            5 * (d.arts_weight or 0) +
-            5 * (d.commerce_weight or 0) +
-            5 * (d.science_weight or 0)
+        weighted_sum = (
+            (d.math_weight or 0) +
+            (d.tech_weight or 0) +
+            (d.arts_weight or 0) +
+            (d.commerce_weight or 0) +
+            (d.science_weight or 0)
         )
 
-        confidence = (total / max_possible * 100) if max_possible > 0 else 0
+        confidence = (total / (5 * weighted_sum)) * 100 if weighted_sum > 0 else 0
+
+        confidence = min(confidence * 1.15, 100)
 
         # ------------------------------
         # EXPLANATION
@@ -100,6 +105,16 @@ def generate_recommendations(profile_id, db: Session, top_n=5):
     # ------------------------------
     # SORT + LIMIT
     # ------------------------------
-    results.sort(key=lambda x: x["score"], reverse=True)
+    MIN_CONFIDENCE = 45
 
-    return results[:top_n]
+    # filter weak matches
+    filtered = [r for r in results if r["confidence"] >= MIN_CONFIDENCE]
+
+    # fallback if too strict
+    if len(filtered) < 5:
+        filtered = results
+
+    # sort final list
+    filtered.sort(key=lambda x: x["score"], reverse=True)
+
+    return filtered[:8]

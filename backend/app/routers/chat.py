@@ -29,7 +29,7 @@ def chat(
     profile = result["profile"]
 
     # Recompute recommendations with updated scores
-    updated_recommendations = generate_recommendations(profile.id, db, top_n=5)
+    updated_recommendations = generate_recommendations(profile.id, db, top_n=10)
 
     return ChatResponse(
         reply=result["reply"],

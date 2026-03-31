@@ -4,6 +4,7 @@ import httpx
 from sqlalchemy.orm import Session
 from app.models import UserProfile, Score
 from app.services.scoring_service import recompute_scores
+from app.models import SubjectResponse
 
 # ==============================
 # CONFIG
@@ -18,11 +19,7 @@ ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
 # MOCK PARSER (YOUR ORIGINAL LOGIC)
 # ==============================
 
-def parse_chat_input(message: str) -> dict:
-    msg = message.lower()
-    updates = {}
-    reply_hints = []
-
+def detect_interests(msg: str):
     interest_keywords = {
         "coding": ["coding", "programming", "code", "software", "developer"],
         "design": ["design", "creative", "art", "draw", "visual"],
@@ -34,47 +31,30 @@ def parse_chat_input(message: str) -> dict:
         "machines": ["machines", "mechanical", "robot", "build"],
     }
 
-    detected_interests = []
+    scores = {}
+
     for interest, keywords in interest_keywords.items():
-        if any(kw in msg for kw in keywords):
-            detected_interests.append(interest)
+        match_count = sum(1 for kw in keywords if kw in msg)
+        if match_count > 0:
+            scores[interest] = match_count
 
-    if detected_interests:
-        updates["interests"] = detected_interests
-        reply_hints.append(f"interests in {', '.join(detected_interests)}")
+    return scores
 
-    if any(w in msg for w in ["creative", "artistic", "design"]):
-        updates["work_style"] = "creative"
-        reply_hints.append("creative work style")
-    elif any(w in msg for w in ["analytical", "logical", "math", "data"]):
-        updates["work_style"] = "analytical"
-        reply_hints.append("analytical work style")
+# ✅ FIXED NEGATION (context aware)
+def is_negative(msg: str, keywords: list):
+    neg_words = ["not", "don't", "dont", "hate", "dislike"]
 
-    field_keywords = {
-        "engineering": ["engineering", "tech", "computer"],
-        "science": ["science", "biology", "physics"],
-        "arts": ["arts", "psychology", "design"],
-        "commerce": ["commerce", "business", "finance"],
-    }
+    for kw in keywords:
+        for neg in neg_words:
+            if f"{neg} {kw}" in msg or f"{kw} is not" in msg:
+                return True
+    return False
 
-    preferred_fields = []
-    for field, keywords in field_keywords.items():
-        if any(kw in msg for kw in keywords):
-            preferred_fields.append(field)
+def convert_to_adjustments(msg: str):
+    msg = msg.lower()
 
-    if preferred_fields:
-        updates["preferred_fields"] = preferred_fields
-        reply_hints.append(f"preference for {', '.join(preferred_fields)}")
+    interest_scores = detect_interests(msg)
 
-    if reply_hints:
-        reply = f"Got it! Updated based on your {' and '.join(reply_hints)}."
-    else:
-        reply = "Thanks! I've noted your input."
-
-    return {"updates": updates, "reply": reply}
-
-
-def convert_updates_to_adjustments(updates: dict):
     adj = {
         "math_score": 0,
         "science_score": 0,
@@ -83,28 +63,55 @@ def convert_updates_to_adjustments(updates: dict):
         "arts_score": 0
     }
 
-    interests = updates.get("interests", [])
+    # ✅ COMPLETE mapping (fixed)
+    mapping = {
+        "coding": "tech_score",
+        "data": "math_score",
+        "health": "science_score",
+        "business": "commerce_score",
+        "design": "arts_score",
+        "research": "science_score",
+        "teaching": "arts_score",
+        "machines": "tech_score",
+    }
 
-    if "coding" in interests:
-        adj["tech_score"] += 2
-    if "data" in interests:
-        adj["math_score"] += 1
-    if "health" in interests:
-        adj["science_score"] += 2
-    if "business" in interests:
-        adj["commerce_score"] += 2
-    if "design" in interests:
-        adj["arts_score"] += 2
+    for interest, strength in interest_scores.items():
+        target = mapping.get(interest)
 
-    return adj
+        if not target:
+            continue
 
+        # ✅ SMOOTH update (fixed)
+        delta = min(strength * 0.5, 2)
+
+        # ✅ NEGATION applied correctly
+        if is_negative(msg, [interest]):
+            adj[target] -= delta
+        else:
+            adj[target] += delta
+
+    return adj, interest_scores
+
+
+# ==============================
+# MOCK CHAT (IMPROVED RESPONSE)
+# ==============================
 
 def mock_chat(message: str):
-    parsed = parse_chat_input(message)
+    adjustments, interest_scores = convert_to_adjustments(message)
+
+    detected = list(interest_scores.keys())
+
+    if detected:
+        reply = f"Got it! I can see you're interested in {', '.join(detected)}."
+    else:
+        reply = "Thanks! Tell me a bit more about what you enjoy."
+
     return {
-        "reply": parsed["reply"],
-        "adjustments": convert_updates_to_adjustments(parsed["updates"])
+        "reply": reply,
+        "adjustments": adjustments
     }
+
 
 # ==============================
 # REAL LLM (OPTIONAL)
@@ -148,8 +155,8 @@ def call_claude(profile: UserProfile, score: Score, history: list, user_message:
 # HELPERS
 # ==============================
 
-def clamp(val):
-    return max(min(val, 2), -2)
+def clamp(val, min_v=1, max_v=5):
+    return max(min(val, max_v), min_v)
 
 # ==============================
 # MAIN FUNCTION
@@ -157,23 +164,33 @@ def clamp(val):
 
 
 def apply_adjustments_to_responses(profile_id: int, adjustments: dict, db: Session):
-    from app.models import SubjectResponse
 
     responses = db.query(SubjectResponse).filter(
         SubjectResponse.profile_id == profile_id
     ).all()
 
+    print("\n--- SCORE UPDATE START ---")
+    print("ADJUSTMENTS:", adjustments)
+
     for r in responses:
+        before = r.interest
+
         if r.subject == "math":
-            r.interest += adjustments.get("math_score", 0)
+            r.interest = clamp(r.interest + adjustments.get("math_score", 0))
         elif r.subject == "science":
-            r.interest += adjustments.get("science_score", 0)
+            r.interest = clamp(r.interest + adjustments.get("science_score", 0))
         elif r.subject == "tech":
-            r.interest += adjustments.get("tech_score", 0)
+            r.interest = clamp(r.interest + adjustments.get("tech_score", 0))
         elif r.subject == "commerce":
-            r.interest += adjustments.get("commerce_score", 0)
+            r.interest = clamp(r.interest + adjustments.get("commerce_score", 0))
         elif r.subject == "arts":
-            r.interest += adjustments.get("arts_score", 0)
+            r.interest = clamp(r.interest + adjustments.get("arts_score", 0))
+        
+        after = r.interest
+
+        print(f"{r.subject.upper()} → BEFORE: {before} | AFTER: {after}")
+
+    print("--- SCORE UPDATE END ---\n")
 
     db.commit()
 
@@ -183,6 +200,7 @@ def process_chat(profile_id: int, message: str, db: Session) -> dict:
         return None
 
     history = list(profile.chat_history or [])
+
     try:
         if LLM_MODE == "mock":
             result = mock_chat(message)
@@ -194,14 +212,15 @@ def process_chat(profile_id: int, message: str, db: Session) -> dict:
     reply = result.get("reply", "Tell me more about your interests.")
     adjustments = result.get("adjustments", {})
 
+    # ✅ DEBUG (keep during testing)
+    print("ADJUSTMENTS:", adjustments)
+
     apply_adjustments_to_responses(profile.id, adjustments, db)
 
-    # recompute scores from updated responses
+    # recompute scores
     recompute_scores(profile.id, db)
 
-    # ------------------------------
-    # SAVE CHAT HISTORY
-    # ------------------------------
+    # save history
     history.append({"role": "user", "content": message})
     history.append({"role": "assistant", "content": reply})
     profile.chat_history = history
