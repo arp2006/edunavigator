@@ -1,0 +1,266 @@
+/* GLOBAL */
+body {
+  margin: 0;
+  font-family: "Segoe UI", sans-serif;
+  background: #0f172a;
+  color: #fff;
+  overflow-x: hidden;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* BACKGROUND */
+.landing::before {
+  content: "";
+  position: fixed;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle at 30% 30%, #6366f1 0%, transparent 25%),
+              radial-gradient(circle at 70% 60%, #8b5cf6 0%, transparent 25%);
+  animation: moveBg 15s linear infinite;
+  opacity: 0.15;
+  z-index: 0;
+}
+
+@keyframes moveBg {
+  0% { transform: translate(0,0); }
+  50% { transform: translate(-10%, -10%); }
+  100% { transform: translate(0,0); }
+}
+
+.bg-glow {
+  position: absolute;
+  width: 500px;
+  height: 500px;
+  background: #6366f1;
+  filter: blur(120px);
+  top: -100px;
+  left: -100px;
+  opacity: 0.2;
+}
+
+/* NAVBAR */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  padding: 20px 60px;
+  background: rgba(15,23,42,0.6);
+  backdrop-filter: blur(15px);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.logo {
+  color: #818cf8;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.nav-buttons button {
+  margin-left: 10px;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  border: none;
+  font-size: 14px;
+}
+
+.login {
+  background: transparent;
+  color: #fff;
+  border: 1px solid #475569;
+}
+
+.signup {
+  background: #6366f1;
+  color: white;
+}
+
+/* HERO */
+.hero {
+  padding: 80px 20px 40px;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+
+.hero-content {
+  max-width: 900px;
+  margin: auto;
+  animation: fadeUp 0.8s ease forwards;
+}
+
+.hero h1 {
+  font-size: 46px;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+  margin-bottom: 12px;
+}
+
+.hero p {
+  font-size: 17px;
+  line-height: 1.6;
+  color: #cbd5f5;
+  max-width: 600px;
+  margin: auto;
+  margin-bottom: 18px;
+}
+
+/* BADGE */
+.badge {
+  background: rgba(99,102,241,0.2);
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 14px;
+  color: #818cf8;
+}
+
+/* BUTTONS */
+.hero-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.hero-buttons button {
+  padding: 12px 22px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14.5px;
+}
+
+.primary {
+  background: #6366f1;
+  color: white;
+  box-shadow: 0 0 20px rgba(99,102,241,0.5);
+}
+
+.primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 30px rgba(99,102,241,0.8);
+  transition: 0.2s;
+}
+
+.secondary {
+  background: transparent;
+  border: 1px solid #6366f1;
+  color: #6366f1;
+}
+
+.secondary:hover {
+  transform: translateY(-2px);
+  transition: 0.2s;
+}
+
+/* FEATURES */
+.features {
+  display: flex;
+  justify-content: center;
+  gap: 25px;
+  padding: 60px;
+  flex-wrap: wrap;
+  margin-top: -10px;
+}
+
+.card {
+  background: rgba(255,255,255,0.06);
+  padding: 25px;
+  border-radius: 16px;
+  width: 260px;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(255,255,255,0.08);
+  backdrop-filter: blur(12px);
+  line-height: 1.5;
+}
+
+.card:hover {
+  transform: translateY(-12px) scale(1.04);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+}
+
+.card p {
+  font-size: 14.5px;
+}
+
+.card h3 {
+  color: #818cf8;
+}
+
+/* STATS */
+.stats {
+  display: flex;
+  justify-content: center;
+  gap: 50px;
+  padding: 50px;
+  text-align: center;
+}
+
+.stat h2 {
+  color: #818cf8;
+}
+
+/* STEPS */
+.steps {
+  text-align: center;
+  padding: 60px;
+}
+
+.step-container {
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+  flex-wrap: wrap;
+}
+
+.step {
+  background: rgba(255,255,255,0.05);
+  padding: 20px;
+  border-radius: 10px;
+  width: 200px;
+}
+
+.step span {
+  background: #6366f1;
+  padding: 10px;
+  border-radius: 50%;
+}
+
+/* FINAL CTA */
+.final-cta {
+  text-align: center;
+  padding: 80px 20px;
+}
+
+.final-cta button {
+  padding: 12px 30px;
+  background: #6366f1;
+  border: none;
+  border-radius: 8px;
+  color: white;
+  cursor: pointer;
+}
+
+/* FOOTER */
+.footer {
+  text-align: center;
+  padding: 20px;
+  border-top: 1px solid #334155;
+  color: #94a3b8;
+}
+
+/* ANIMATION */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
