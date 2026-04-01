@@ -6,18 +6,11 @@ from app.models import UserProfile, Score
 from app.services.scoring_service import recompute_scores
 from app.models import SubjectResponse
 
-# ==============================
-# CONFIG
-# ==============================
-
 LLM_MODE = os.getenv("LLM_MODE", "mock")  # "mock" or "real"
 
 ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages"
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
 
-# ==============================
-# MOCK PARSER (YOUR ORIGINAL LOGIC)
-# ==============================
 
 def detect_interests(msg: str):
     interest_keywords = {
@@ -46,8 +39,22 @@ def is_negative(msg: str, keywords: list):
 
     for kw in keywords:
         for neg in neg_words:
-            if f"{neg} {kw}" in msg or f"{kw} is not" in msg:
+            # patterns like:
+            # "don't like coding"
+            # "hate coding"
+            # "not into coding"
+            if f"{neg} {kw}" in msg:
                 return True
+
+            if f"{neg} like {kw}" in msg:
+                return True
+
+            if f"{neg} enjoy {kw}" in msg:
+                return True
+
+            if f"{neg} into {kw}" in msg:
+                return True
+
     return False
 
 def convert_to_adjustments(msg: str):
@@ -92,11 +99,6 @@ def convert_to_adjustments(msg: str):
 
     return adj, interest_scores
 
-
-# ==============================
-# MOCK CHAT (IMPROVED RESPONSE)
-# ==============================
-
 def mock_chat(message: str):
     adjustments, interest_scores = convert_to_adjustments(message)
 
@@ -111,7 +113,6 @@ def mock_chat(message: str):
         "reply": reply,
         "adjustments": adjustments
     }
-
 
 # ==============================
 # REAL LLM (OPTIONAL)
@@ -151,53 +152,25 @@ def call_claude(profile: UserProfile, score: Score, history: list, user_message:
     response.raise_for_status()
     return json.loads(response.json()["content"][0]["text"])
 
-# ==============================
-# HELPERS
-# ==============================
 
 def clamp(val, min_v=1, max_v=5):
     return max(min(val, max_v), min_v)
 
-# ==============================
-# MAIN FUNCTION
-# ==============================
-
-
-def apply_adjustments_to_responses(profile_id: int, adjustments: dict, db: Session):
-
-    responses = db.query(SubjectResponse).filter(
-        SubjectResponse.profile_id == profile_id
-    ).all()
-
-    print("\n--- SCORE UPDATE START ---")
-    print("ADJUSTMENTS:", adjustments)
-
-    for r in responses:
-        before = r.interest
-
-        if r.subject == "math":
-            r.interest = clamp(r.interest + adjustments.get("math_score", 0))
-        elif r.subject == "science":
-            r.interest = clamp(r.interest + adjustments.get("science_score", 0))
-        elif r.subject == "tech":
-            r.interest = clamp(r.interest + adjustments.get("tech_score", 0))
-        elif r.subject == "commerce":
-            r.interest = clamp(r.interest + adjustments.get("commerce_score", 0))
-        elif r.subject == "arts":
-            r.interest = clamp(r.interest + adjustments.get("arts_score", 0))
-        
-        after = r.interest
-
-        print(f"{r.subject.upper()} → BEFORE: {before} | AFTER: {after}")
-
-    print("--- SCORE UPDATE END ---\n")
-
-    db.commit()
-
+    
 def process_chat(profile_id: int, message: str, db: Session) -> dict:
     profile = db.query(UserProfile).filter(UserProfile.id == profile_id).first()
     if not profile:
         return None
+
+    old_score = db.query(Score).filter(Score.profile_id == profile_id).first()
+
+    if old_score:
+        print("\n--- BEFORE RECOMPUTE ---")
+        print(f"MATH: {old_score.math_score}")
+        print(f"SCIENCE: {old_score.science_score}")
+        print(f"TECH: {old_score.tech_score}")
+        print(f"COMMERCE: {old_score.commerce_score}")
+        print(f"ARTS: {old_score.arts_score}")
 
     history = list(profile.chat_history or [])
 
@@ -215,10 +188,32 @@ def process_chat(profile_id: int, message: str, db: Session) -> dict:
     # ✅ DEBUG (keep during testing)
     print("ADJUSTMENTS:", adjustments)
 
-    apply_adjustments_to_responses(profile.id, adjustments, db)
+    score = db.query(Score).filter(Score.profile_id == profile_id).first()
 
-    # recompute scores
-    recompute_scores(profile.id, db)
+    print("\n--- BEFORE SCORE UPDATE ---")
+    print(score.math_score, score.science_score, score.tech_score)
+
+    score.math_score = clamp(score.math_score + adjustments.get("math_score", 0))
+    score.science_score = clamp(score.science_score + adjustments.get("science_score", 0))
+    score.tech_score = clamp(score.tech_score + adjustments.get("tech_score", 0))
+    score.commerce_score = clamp(score.commerce_score + adjustments.get("commerce_score", 0))
+    score.arts_score = clamp(score.arts_score + adjustments.get("arts_score", 0))
+
+    print("\n--- AFTER SCORE UPDATE ---")
+    print(score.math_score, score.science_score, score.tech_score)
+
+    db.commit()
+
+        # ✅ GET NEW SCORES
+    new_score = db.query(Score).filter(Score.profile_id == profile_id).first()
+
+    if new_score:
+        print("\n--- AFTER RECOMPUTE ---")
+        print(f"MATH: {new_score.math_score}")
+        print(f"SCIENCE: {new_score.science_score}")
+        print(f"TECH: {new_score.tech_score}")
+        print(f"COMMERCE: {new_score.commerce_score}")
+        print(f"ARTS: {new_score.arts_score}")
 
     # save history
     history.append({"role": "user", "content": message})

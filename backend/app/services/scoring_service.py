@@ -40,22 +40,34 @@ def recompute_scores(profile_id: int, db: Session):
         "arts_score": 0
     }
 
+    category_map = {
+        "math": "math_score",
+        "physics": "science_score",
+        "chemistry": "science_score",
+        "biology": "science_score",
+        "computer": "tech_score",
+        "programming": "tech_score",
+        "it": "tech_score",
+        "accounts": "commerce_score",
+        "business": "commerce_score",
+        "history": "arts_score",
+        "literature": "arts_score"
+    }
+
     for r in responses:
-        category = r.subject  # or r.category depending on your model
+        subject = r.subject.lower()
         value = (r.interest + r.performance) / 2
 
-        if category == "math":
-            scores["math_score"] += value
-        elif category == "science":
-            scores["science_score"] += value
-        elif category == "tech":
-            scores["tech_score"] += value
-        elif category == "commerce":
-            scores["commerce_score"] += value
-        elif category == "arts":
-            scores["arts_score"] += value
+        target = category_map.get(subject)
 
-    # update or create score row
+        if target:
+            scores[target] += value
+
+    # debug (VERY useful)
+    print("\n--- RECOMPUTED SCORES ---")
+    for k, v in scores.items():
+        print(f"{k.upper()}: {v}")
+
     if not profile.score:
         profile.score = Score(**scores)
     else:
@@ -63,3 +75,4 @@ def recompute_scores(profile_id: int, db: Session):
             setattr(profile.score, k, v)
 
     db.commit()
+    
