@@ -1,3 +1,4 @@
+---
 # EduNavigator
 
 An AI-powered bachelor's degree recommendation system for Indian students. Students complete a subject-interest quiz, and the system recommends the most suitable degrees based on their aptitude scores. A chat advisor lets students refine recommendations by describing their interests in natural language.
@@ -201,3 +202,4 @@ In `real` mode, Claude API is called with the student's profile and score contex
 | GET | `/recommend/{id}` | No | Get top degree recommendations |
 | POST | `/chat/` | Yes | Send chat message, get reply + updated recs |
 | GET | `/chat/history/{id}` | Yes | Get chat history for profile |
+---
