@@ -4,6 +4,11 @@ An AI-powered bachelor's degree recommendation system for Indian students. Stude
 
 ---
 
+## Live Demo
+https://edunavigator-sooty.vercel.app/
+
+---
+
 ## Tech Stack
 
 | Layer | Technology |
