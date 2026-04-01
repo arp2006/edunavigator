@@ -2,8 +2,13 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.db import engine, Base   # ✅ FIXED IMPORT
 from app.routers import auth, profile, recommend, chat, questionnaire
+import os
+from dotenv import load_dotenv
 
-# Create all tables on startup
+load_dotenv()
+
+FRONTEND = os.getenv("FRONTEND")
+
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
@@ -15,7 +20,7 @@ app = FastAPI(
 # CORS — allow frontend (React) to communicate with backend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:5173"],  # update if needed
+    allow_origins=[FRONTEND],  # update if needed
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -3,7 +3,6 @@ import json
 import httpx
 from sqlalchemy.orm import Session
 from app.models import UserProfile, Score
-from app.services.scoring_service import recompute_scores
 from app.models import SubjectResponse
 
 LLM_MODE = os.getenv("LLM_MODE", "mock")  # "mock" or "real"
@@ -33,7 +32,6 @@ def detect_interests(msg: str):
 
     return scores
 
-# ✅ FIXED NEGATION (context aware)
 def is_negative(msg: str, keywords: list):
     neg_words = ["not", "don't", "dont", "hate", "dislike"]
 
@@ -99,6 +97,9 @@ def convert_to_adjustments(msg: str):
 
     return adj, interest_scores
 
+def clamp(val, min_v=1, max_v=5):
+    return max(min(val, max_v), min_v)
+
 def mock_chat(message: str):
     adjustments, interest_scores = convert_to_adjustments(message)
 
@@ -152,11 +153,10 @@ def call_claude(profile: UserProfile, score: Score, history: list, user_message:
     response.raise_for_status()
     return json.loads(response.json()["content"][0]["text"])
 
-
-def clamp(val, min_v=1, max_v=5):
-    return max(min(val, max_v), min_v)
-
-    
+# ==============================
+# Normal Logic
+# ==============================
+  
 def process_chat(profile_id: int, message: str, db: Session) -> dict:
     profile = db.query(UserProfile).filter(UserProfile.id == profile_id).first()
     if not profile:
