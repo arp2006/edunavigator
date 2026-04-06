@@ -54,10 +54,7 @@ export default function Login() {
 
         <div className="demo-accounts">
           <div className="muted">
-            Admin: <b>admin@edunavigator.com</b> / <b>Admin123!</b>
-          </div>
-          <div className="muted">
-            Students: <b>student1@edunavigator.com</b> / <b>Student123!</b> (also student2, student3)
+            Students: <b>test@edunavigator.com</b>
           </div>
         </div>
       </div>
