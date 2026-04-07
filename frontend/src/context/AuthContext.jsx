@@ -24,32 +24,32 @@ export function AuthProvider({ children }) {
   }, []);
 
   const login = async ({ email, password }) => {
-  const res = await api.post("/auth/login", { email, password });
-  const nextToken = res.data.access_token;
-  const userData = {
-    id: res.data.access_user,
-    stream: res.data.stream,
-    profile_id: res.data.profile_id
+    const res = await api.post("/auth/login", { email, password });
+    const nextToken = res.data.access_token;
+    const userData = {
+      id: res.data.access_user,
+      stream: res.data.stream,
+      profile_id: res.data.profile_id
+    };
+    localStorage.setItem("eduNavigator_token", nextToken);
+    localStorage.setItem("eduNavigator_user", JSON.stringify(userData));
+    setAuthState({ token: nextToken, user: userData });
+    return res.data;
   };
-  localStorage.setItem("eduNavigator_token", nextToken);
-  localStorage.setItem("eduNavigator_user", JSON.stringify(userData));
-  setAuthState({ token: nextToken, user: userData });
-  return res.data;
-};
 
   const register = async ({ email, password, name, stream }) => {
-  const res = await api.post("/auth/signup", { email, password, name, stream });
-  const nextToken = res.data.access_token;
-  const userData = {
-    id: res.data.access_user,
-    stream: res.data.stream,
-    profile_id: res.data.profile_id
+    const res = await api.post("/auth/signup", { email, password, name, stream });
+    const nextToken = res.data.access_token;
+    const userData = {
+      id: res.data.access_user,
+      stream: res.data.stream,
+      profile_id: res.data.profile_id
+    };
+    localStorage.setItem("eduNavigator_token", nextToken);
+    localStorage.setItem("eduNavigator_user", JSON.stringify(userData));
+    setAuthState({ token: nextToken, user: userData });
+    return res.data;
   };
-  localStorage.setItem("eduNavigator_token", nextToken);
-  localStorage.setItem("eduNavigator_user", JSON.stringify(userData));
-  setAuthState({ token: nextToken, user: userData });
-  return res.data;
-};
 
   const logout = () => {
     localStorage.removeItem("eduNavigator_token");

@@ -8,8 +8,6 @@ class DegreeRecommendation(BaseModel):
     field: str
     discipline: str
     score: float
-
-    # ✅ ADD THESE
     confidence: Optional[float] = None
     why: Optional[str] = None
 
